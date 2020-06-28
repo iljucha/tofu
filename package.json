@@ -1,0 +1,27 @@
+{
+  "name": "@iljucha/tofu",
+  "version": "1.0.0",
+  "description": "a little too simplistic web server",
+  "main": "index.js",
+  "type": "module",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/iljucha/tofu.git"
+  },
+  "keywords": [
+    "server",
+    "web-framework"
+  ],
+  "dependencies": {
+    "@iljucha/render": "1.0.0"
+  },
+  "author": "Ilja Bituzki",
+  "license": "ISC",
+  "bugs": {
+    "url": "https://github.com/iljucha/tofu/issues"
+  },
+  "homepage": "https://github.com/iljucha/tofu#readme"
+}
