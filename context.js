@@ -71,6 +71,18 @@ export default class Context {
     }
 
     /**
+     * if assertion fails, client gets json message
+     * @param {any} assertion 
+     * @param {number} status 
+     * @param {string} message 
+     */
+    assert(assertion, status, message) {
+        if (!assertion) {
+            this.json = { status, message }
+        }
+    }
+
+    /**
      * set client cookies
      * @param {object} value
      */
@@ -164,7 +176,7 @@ export default class Context {
         if (value !== true) {
             return
         }
-        this.serverResponse.end()
+        this.body = ""
     }
 
     /**
@@ -204,7 +216,6 @@ export default class Context {
             this.#serverResponse.setHeader(keys[i], value[keys[i]])
         }
     }
-
 
     get output() {
         return {
@@ -265,9 +276,16 @@ export default class Context {
     set body(value) {
         let readable = Readable.from(value)
         readable.on("data", stream => {
-            this.header = { "Connection": "close" }
-            this.length = Buffer.byteLength(stream, this.#charset || null)
-            this.#serverResponse.end(stream, this.#charset || null)
+            try {
+                this.header = { "Connection": "close" }
+                this.length = Buffer.byteLength(stream, this.#charset || null)
+                this.#serverResponse.end(stream, this.#charset || null)
+            }
+            catch (error) {
+                if (error.code !== "ERR_HTTP_HEADERS_SENT") {
+                    console.log(error)
+                }
+            }
         })
     }
 
@@ -349,13 +367,13 @@ export default class Context {
             incomingMessage.on("end", () => {
                 let ctx = new Context(incomingMessage, serverResponse)
                 let route = _routes.find(route => route.match(ctx.method, ctx.url))
+                const plugins = _plugins.filter(plugin => plugin.match(ctx.method, ctx.url))
                 if (Buffer.concat(body).toString()) {
                     ctx.locals.body = Buffer.concat(body).toString()
                 }
                 if (route) {
                     ctx.locals.params = route.params(ctx.url)
                 }
-                const plugins = _plugins.filter(plugin => plugin.match(ctx.method, ctx.url))
                 Walkthrough(ctx, plugins, route, 0)
             })
         }
