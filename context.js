@@ -44,12 +44,7 @@ export default class Context {
         return this.#serverResponse
     }
 
-    /** @type {Route} */
-    get route() {
-        return this.locals.route
-    }
-
-    /** @type {Route} */
+    /** @type {object} */
     get params() {
         return this.locals.params
     }
