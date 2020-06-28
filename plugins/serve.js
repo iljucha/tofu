@@ -40,7 +40,6 @@ export default function serve(path, ctx, next) {
                 ctx.type = output + (charset ? "; charset=" + charset : "")
                 ctx.charset = charset
                 ctx.body = data
-                //ctx.end = true
             })
         })
     })
