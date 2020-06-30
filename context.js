@@ -2,7 +2,6 @@
 import http from "http"
 import url from "url"
 import { Readable } from "stream"
-import Walkthrough from "./walkthrough.js"
 import Route from "./route.js"
 import Render from "@iljucha/render"
 
@@ -362,6 +361,10 @@ export default class Context {
         }
     }
 
+    static get hasBody() {
+        return /(.(body|json|text|html|redirect|render|end|throw) ?= ?)|.(output|assert)/
+    }
+
     /**
      * **Context** is created as a requestListener for http.createServer
      * @param {Route[]} _plugins 
@@ -387,9 +390,54 @@ export default class Context {
                 if (route) {
                     ctx.locals.params = route.params(ctx.url)
                 }
-                Walkthrough(ctx, plugins, route, 0)
+                Context.walkthrough(ctx, plugins, route, 0)
             })
         }
         return requestListener
+    }
+
+    /**
+     * @param {Context} ctx
+     * @param {Route[]} plugins
+     * @param {Route} route
+     * @param {number} i
+     */
+    static walkthrough(ctx, plugins, route, i) {
+        if (plugins[i]) {
+            if (plugins[i].handler.length !== 2) {
+                ctx.status = 418
+                return ctx.end = true
+            }
+            try {
+                plugins[i].handler(ctx, () => Context.walkthrough(ctx, plugins, route, i+1))
+            }
+            catch (err) {
+                ctx.status = 500
+                return ctx.end = true
+            }
+        }
+        else {
+            try {
+                if (!route) {
+                    ctx.status = 404
+                    return ctx.end = true
+                }
+                const fn = route.handler.toString().replace(/\r?\n|\r/gm, "")
+                if (Context.hasBody.test(fn) === false) {
+                    ctx.status = 500
+                    return ctx.end = true
+                }
+                else {
+                    route.handler(ctx)
+                }
+            }
+            catch (err) {
+                if (typeof err !== "object") {
+                    console.log(err)
+                }
+                ctx.status = ctx.status || 500
+                return ctx.end = true
+            }
+        }
     }
 }
