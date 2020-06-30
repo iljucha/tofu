@@ -50,40 +50,40 @@ app.serve = "./public"
 // secures server response
 app.secure = true
 
-// add route with the route setter
-app.route = {
+// add route like this
+app.route({
   method: "GET",
   route: "/",
   handler: ctx => ctx.body = "home
-}
+})
 
-// add multiple routes with the routes setter
-app.routes = [
+// add multiple routes like this
+app.routes([
   {
     method: "GET,
     route: "/user/:alias",
     handler: ctx => ctx.json = ctx.locals
   }
-]
+])
 
 // add route with method methods // get, post, put, ...
 app.get("/get", ctx => ctx.end = true)
 
-// add single plugin with no specific route with the plugin setter
-app.plugin = (ctx, next) => {
+// add single plugin with no specific route
+app.plugin((ctx, next) => {
   setTimeout(() => {
     ctx.locals.coolPlugin = true
     next()
   })
-}
+})
 
-// add multiple plugins with no specific routes with the plugins setter
-app.plugins = [
+// add multiple plugins with no specific routes 
+app.plugins([
   (ctx, next) => {
     ctx.locals.coolPlugin2 = true
     next()
   }
-]
+])
 
 // add plugin for specific route with use method
 app.use("/plugin", (ctx, next) => {
