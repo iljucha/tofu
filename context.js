@@ -85,9 +85,7 @@ export default class Context {
      * ctx.end = true
      */
     set end(value) {
-        if (value === true) {
-            this.body = ""
-        }
+        this.body = ""
     }
 
     /**
@@ -162,7 +160,7 @@ export default class Context {
             try {
                 this.headers = { "Connection": "close" }
                 this.length = Buffer.byteLength(stream, this.#charset || null)
-                this.#serverResponse.end(stream)
+                this.serverResponse.end(stream)
             }
             catch (error) {
                 if (error.code !== "ERR_HTTP_HEADERS_SENT") {
@@ -191,6 +189,22 @@ export default class Context {
         let { status, message, info } = value
         this.status = status
         throw this.json = { message, info }
+    }
+
+    /**
+     * @param {object} value
+     * @example
+     * // send JSON formatted response body
+     * ctx.json = {
+     *      brownie: "yummy"
+     * }
+     * // get JSON formatted request body
+     * console.log(ctx.json)
+     */
+    set json(value) {
+        this.type = "application/json; utf-8"
+        this.charset = "utf-8"
+        this.body = JSON.stringify(value)
     }
 
     /**
@@ -322,6 +336,15 @@ export default class Context {
         return this.#serverResponse.statusCode
     }
 
+    get json() {
+        try {
+            return JSON.parse(this.#locals.body)
+        }
+        catch (error) {
+            return {}
+        }
+    }
+
     /**
      * @param {any} assertion 
      * @param {number} status 
@@ -336,31 +359,6 @@ export default class Context {
     assert(assertion, status, message, info) {
         if (!assertion) {
             this.throw = { status, message, info }
-        }
-    }
-
-    /**
-     * @param {object} value
-     * @example
-     * // send JSON formatted response body
-     * ctx.json = {
-     *      brownie: "yummy"
-     * }
-     * // get JSON formatted request body
-     * console.log(ctx.json)
-     */
-    set json(value) {
-        this.type = "application/json; utf-8"
-        this.charset = "utf-8"
-        this.body = JSON.stringify(value)
-    }
-
-    get json() {
-        try {
-            return JSON.parse(this.#locals.body)
-        }
-        catch (error) {
-            return {}
         }
     }
 

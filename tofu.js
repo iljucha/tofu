@@ -1,7 +1,5 @@
 // @ts-check
 import http from "http"
-import https from "http"
-import fs from "fs"
 import Context from "./context.js"
 import Route from "./route.js"
 import serve from "@iljucha/tofu/plugins/serve.js"
@@ -37,20 +35,18 @@ export default class Tofu {
      * app.serve = "./public"
      */
     set serve(value) {
-        if (process.platform !== "linux") {
-            throw Error("serve can only be used on Linux Systems")
-        }
+        Tofu.assert(process.platform === "linux", "serve can only be used on Linux Systems")
         this.use("/*", (ctx, next) => serve(value, ctx, next))
     }
 
     /**
      * secures web server responses
      * @param {boolean} value
+     * @example
+     * app.secure = true
      */
     set secure(value) {
-        if (value !== true) {
-            return
-        }
+        Tofu.assert(value === true, "only true is accepted")
         this.plugin(secure())
     }
 
@@ -59,6 +55,7 @@ export default class Tofu {
      * @param {Plugin} value 
      */
     plugin(value) {
+        Tofu.assert(typeof value === "function", "wrong type for handler")
         this.use("/*", value)
     }
 
@@ -67,6 +64,7 @@ export default class Tofu {
      * @param {Plugin[]} value 
      */
     plugins(value) {
+        Tofu.assert(Array.isArray(value), "only arrays are accepted")
         const plugins = value
         const length = plugins.length
         let i = 0
@@ -80,6 +78,8 @@ export default class Tofu {
      * @param {Plugin} handler 
      */
     use(route, handler) {
+        Tofu.assert(typeof route === "string", "wrong type for route")
+        Tofu.assert(typeof handler === "function", "wrong type for handler")
         this.#plugins.push(new Route("ANY", route, handler))
         return this
     }
@@ -159,8 +159,12 @@ export default class Tofu {
     /**
      * adds route to app
      * @param {{method: string, route: string, handler: Handler}} value
+
      */
     route(value) {
+        Tofu.assert(typeof value.method === "string", "wrong type for method")
+        Tofu.assert(typeof value.route === "string", "wrong type for route")
+        Tofu.assert(typeof value.handler === "function", "wrong type for handler")
         let { method, route, handler } = value
         this.#routes.push(new Route(method, route, handler))
     }
@@ -170,6 +174,7 @@ export default class Tofu {
      * @param {{method: string, route: string, handler: Handler}[]} value
      */
     routes(value) {
+        Tofu.assert(Array.isArray(value), "only arrays are accepted")
         const routes = value
         const length = routes.length
         let i = 0
@@ -183,7 +188,22 @@ export default class Tofu {
      * @param {number} port 
      */
     listen(port) {
+        Tofu.assert(typeof port === "number", "port must be a number")
         this.#server.listen(port)
         return this
+    }
+
+    /**
+     * if condition fails, it throws
+     * @param {any} condition 
+     * @param {string} message
+     * @example
+     * Tofu.assert(false, "false will never be true") // throws
+     * Tofu.assert(true, "true will be true") // does nothing
+     */
+    static assert(condition, message) {
+        if (!condition) {
+            throw message
+        }
     }
 }

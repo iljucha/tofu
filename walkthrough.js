@@ -6,16 +6,6 @@ const unnecessary = /\r?\n|\r/gm
 
 /**
  * @param {Context} ctx
- * @param {number} status
- * @param {Iterable} body
- */
-function _error(ctx, status) {
-    ctx.status = status
-    ctx.end = true
-}
-
-/**
- * @param {Context} ctx
  * @param {Route[]} plugins
  * @param {Route} route
  * @param {number} i
@@ -23,23 +13,27 @@ function _error(ctx, status) {
 export default function Walkthrough(ctx, plugins, route, i) {
     if (plugins[i]) {
         if (plugins[i].handler.length !== 2) {
-            return _error(ctx, 418)
+            ctx.status = 418
+            return ctx.end = true
         }
         try {
             plugins[i].handler(ctx, () => Walkthrough(ctx, plugins, route, i+1))
         }
         catch (err) {
-            return _error(ctx, 500)
+            ctx.status = 500
+            return ctx.end = true
         }
     }
     else {
         try {
             if (!route) {
-                return _error(ctx, 404)
+                ctx.status = 404
+                return ctx.end = true
             }
             const fn = route.handler.toString().replace(unnecessary, "")
             if (hasBody.test(fn) === false) {
-                return _error(ctx, 500)
+                ctx.status = 500
+                return ctx.end = true
             }
             else {
                 route.handler(ctx)
@@ -49,7 +43,8 @@ export default function Walkthrough(ctx, plugins, route, i) {
             if (typeof err === Error) {
                 console.log(err)
             }
-            _error(ctx, ctx.status || 500)
+            ctx.status = ctx.status || 500
+            return ctx.end = true
         }
     }
 }
