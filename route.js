@@ -33,6 +33,7 @@ export default class Route {
     /**
      * @param {string} method - IncomingMessage method
      * @param {string} url - IncomingMessage url
+     * @returns {boolean}
      */
     match(method, url) {
         if (this.route === "/*") {
@@ -56,8 +57,7 @@ export default class Route {
      */
     params(url) {
         url = url.split("?")[0] || url
-        let match = this.regExp.exec(url)
-        
+        const match = this.regExp.exec(url)
         if (match) {
             if (match.groups) {
                 return { ...match.groups }
@@ -71,9 +71,6 @@ export default class Route {
         }
     }
 
-    /**
-     * @type {RegExp}
-     */
     get regExp() {
         return this.#regExp
     }
@@ -90,9 +87,6 @@ export default class Route {
         return this.#route
     }
 
-    /**
-     * @type {string[]}
-     */
     get parameters() {
         return this.#parameters
     }

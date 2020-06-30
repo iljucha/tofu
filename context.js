@@ -13,6 +13,7 @@ export default class Context {
     #serverResponse
     /** @type {any} */
     #charset
+    /** @type {any} */
     #locals = {}
 
     /**
@@ -26,7 +27,6 @@ export default class Context {
         this.#serverResponse = serverResponse
     }
 
-    // Setters
     /**
      * @param {string} value
      * @example
@@ -34,9 +34,6 @@ export default class Context {
      * ctx.charset = "utf-8"
      */
     set charset(value) {
-        if (!value) {
-            return
-        }
         this.#charset = value
     }
 
@@ -47,7 +44,7 @@ export default class Context {
      * ctx.type = "text/plain; utf-8"
      */
     set type(value) {
-        this.header = { "Content-Type": value }
+        this.headers = { "Content-Type": value }
     }
 
     /**
@@ -57,7 +54,7 @@ export default class Context {
      * ctx.cache = "public"
      */
     set cache(value) {
-        this.header = { "Cache-Control": value }
+        this.headers = { "Cache-Control": value }
     }
 
     /**
@@ -78,7 +75,7 @@ export default class Context {
         for (i; i < length; i++) {
             array.push(`${object[i]}=${value[object[i]]};`)
         }
-        this.header = { "Set-Cookie": array }
+        this.headers = { "Set-Cookie": array }
     }
 
     /**
@@ -88,14 +85,13 @@ export default class Context {
      * ctx.end = true
      */
     set end(value) {
-        if (value !== true) {
-            return
+        if (value === true) {
+            this.body = ""
         }
-        this.body = ""
     }
 
     /**
-     * @param {number} value 
+     * @param {number|string} value 
      * @example
      * // set response content-length header
      * ctx.length = 100
@@ -103,11 +99,7 @@ export default class Context {
      * console.log(ctx.length)
      */
     set length(value) {
-        this.header = { "Content-Length": value }
-    }
-
-    get length() {
-        return parseInt(this.headers["content-length"]) || 0
+        this.headers = { "Content-Length": value }
     }
 
     /**
@@ -126,12 +118,12 @@ export default class Context {
      * @param {object} value
      * @example
      * // set response headers
-     * ctx.header = {
+     * ctx.headers = {
      *      "Content-Length": 100,
      *      "Content-Type": "text/html; utf-8"
      * }
      */
-    set header(value) {
+    set headers(value) {
         const keys = Object.keys(value)
         const length = keys.length
         let i = 0, found
@@ -152,7 +144,7 @@ export default class Context {
      */
     set redirect(value) {
         this.status = 301
-        this.header = { "Location": value }
+        this.headers = { "Location": value }
         this.end = true
     }
 
@@ -168,7 +160,7 @@ export default class Context {
         let readable = Readable.from(value)
         readable.on("data", stream => {
             try {
-                this.header = { "Connection": "close" }
+                this.headers = { "Connection": "close" }
                 this.length = Buffer.byteLength(stream, this.#charset || null)
                 this.#serverResponse.end(stream)
             }
@@ -245,6 +237,10 @@ export default class Context {
     }
 
     // Getters
+    get length() {
+        return this.headers["content-length"] || 0
+    }
+
     get headers() {
         return this.#incomingMessage.headers
     }
@@ -326,48 +322,6 @@ export default class Context {
         return this.#serverResponse.statusCode
     }
 
-    get output() {
-        return {
-            /** @param {number} status */
-            status: status => {
-                this.status = status
-                return this.output
-            },
-            /** @param {string} input */
-            cache: input => { 
-                this.cache = input 
-                return this.output
-            },
-            /** @param {string} input */
-            type: input => {
-                this.type = input
-                return this.output
-            },
-            /** @param {string} input */
-            charset: input => {
-                this.charset = input
-                return this.output
-            },
-            /** @param {string} url */
-            redirect: url => { this.redirect = url },
-            /** @param {Iterable} input */
-            body: input => { this.body = input },
-            /** @param {object} input */
-            json: input => { this.json = input },
-            /** @param {string} input */
-            text: input => { this.text = input },
-            /** @param {string} input */
-            html: input => { this.html = input },
-            /**
-             * @param {string} template
-             * @param {object} placeholders
-             */
-            render: (template, placeholders) => {
-                this.render = { template, placeholders }
-            }
-        }
-    }
-
     /**
      * @param {any} assertion 
      * @param {number} status 
@@ -426,8 +380,8 @@ export default class Context {
             let body = []
             incomingMessage.on("data", chunk => body.push(chunk) )
             incomingMessage.on("end", () => {
-                let ctx = new Context(incomingMessage, serverResponse)
-                let route = _routes.find(route => route.match(ctx.method, ctx.url))
+                const ctx = new Context(incomingMessage, serverResponse)
+                const route = _routes.find(route => route.match(ctx.method, ctx.url))
                 const plugins = _plugins.filter(plugin => plugin.match(ctx.method, ctx.url))
                 if (Buffer.concat(body).toString()) {
                     ctx.locals.body = Buffer.concat(body).toString()

@@ -1,5 +1,7 @@
 // @ts-check
 import http from "http"
+import https from "http"
+import fs from "fs"
 import Context from "./context.js"
 import Route from "./route.js"
 import serve from "@iljucha/tofu/plugins/serve.js"
@@ -20,8 +22,6 @@ export default class Tofu {
     #routes = []
     /** @type {Route[]} */
     #plugins = []
-    /** @type {any} */
-    #locals = {}
 
     /**
      * create a **Tofu** web server
@@ -29,19 +29,16 @@ export default class Tofu {
     constructor() {
         this.#server = http.createServer(Context.build(this.#plugins, this.#routes))
     }
-
-    /** @type {any} */
-    get locals() {
-        return this.#locals
-    }
-
+ 
     /**
      * serves the files on given path
      * @param {string} value
+     * @example
+     * app.serve = "./public"
      */
     set serve(value) {
         if (process.platform !== "linux") {
-            throw Error("Server.serve can only be used on Linux Systems")
+            throw Error("serve can only be used on Linux Systems")
         }
         this.use("/*", (ctx, next) => serve(value, ctx, next))
     }
