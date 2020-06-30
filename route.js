@@ -1,30 +1,38 @@
+// @ts-check
 import Context from "./context.js"
 
+/**
+ * @typedef {(ctx: Context, next?: () => void) => void} Handler
+ */
+
 export default class Route {
+    /** @type {string[]} */
     #parameters
+    /** @type {RegExp} */
     #regExp
+    /** @type {string} */
     #method
+    /** @type {Handler} */
     #handler
+    /** @type {string} */
     #route
 
     /**
      * @param {string} method
      * @param {string} route
-     * @param {(ctx: Context, next?: () => void) => void} handler
+     * @param {Handler} handler
      */
     constructor(method, route, handler) {
-        this.parameters = route
-        this.regExp = route
-        this.method = method
-        this.route = route
-        this.handler = handler
+        this.#parameters = Route.parameters(route)
+        this.#regExp = Route.regExp(route)
+        this.#method = method
+        this.#route = route
+        this.#handler = handler
     }
 
-    static methods = ["GET", "HEAD", "POST", "PUT", "DELETE", "PATCH", "OPTIONS", "ALL"]
-
     /**
-     * @param {string} method - request objects method property
-     * @param {string} url - request objects url property
+     * @param {string} method - IncomingMessage method
+     * @param {string} url - IncomingMessage url
      */
     match(method, url) {
         if (this.route === "/*") {
@@ -34,7 +42,7 @@ export default class Route {
         if (Object.keys(match).length !== this.parameters.length) {
             return false
         }
-        if (match && (this.method === method || this.method === "ALL")) {
+        if (match && (this.method === method || this.method === "ANY")) {
             return true
         }
         else {
@@ -42,6 +50,10 @@ export default class Route {
         }
     }
 
+    /**
+     * @param {string} url
+     * @returns {any}
+     */
     params(url) {
         url = url.split("?")[0] || url
         let match = this.regExp.exec(url)
@@ -59,43 +71,37 @@ export default class Route {
         }
     }
 
-    set regExp(value) {
-        value = value.replace(/\:([a-zA-Z]+)/gi, "(?<$1>[^\\/\\:\\?]+?)")
-        this.#regExp = new RegExp("^" + value + "/?$")
-    }
-
+    /**
+     * @type {RegExp}
+     */
     get regExp() {
         return this.#regExp
-    }
-
-    set method(value) {
-        if (!Route.methods.includes(value)) {
-            throw Error("unknown method: " + value)
-        }
-        this.#method = value
     }
 
     get method() {
         return this.#method
     }
 
-    set handler(value) {
-        this.#handler = value
-    }
-
     get handler() {
         return this.#handler
-    }
-
-    set route(value) {
-        this.#route = value
     }
 
     get route() {
         return this.#route
     }
 
-    set parameters(value) {
+    /**
+     * @type {string[]}
+     */
+    get parameters() {
+        return this.#parameters
+    }
+
+    /**
+     * @param {string} value
+     * @returns {string[]}
+     */
+    static parameters(value) {
         let params = value.match(/\:([a-zA-Z]+)/gi)
         if (params) {
             params = params.map(param => param.replace(/:/, ""))
@@ -103,10 +109,17 @@ export default class Route {
         else {
             params = []
         }
-        this.#parameters = params
+        return params
     }
 
-    get parameters() {
-        return this.#parameters
+    /**
+     * @param {string} value
+     * @returns {RegExp}
+     * @example
+     * Route.regExp = "/user/:alias" // /^\/user\/(?<alias>[^\/\:\?]+?)\/?$/
+     */
+    static regExp(value) {
+        value = value.replace(/\:([a-zA-Z]+)/gi, "(?<$1>[^\\/\\:\\?]+?)")
+        return new RegExp("^" + value + "/?$")
     }
 }

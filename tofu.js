@@ -6,23 +6,33 @@ import serve from "@iljucha/tofu/plugins/serve.js"
 import secure from "@iljucha/tofu/plugins/secure.js"
 
 /**
+ * @typedef {(context: Context, next: () => void) => void} Plugin
+ * @typedef {(context: Context) => void} Handler
+ */
+
+/**
  * a little too simplistic web server
  */
 export default class Tofu {
     /** @type {http.Server} */
     #server
-
     /** @type {Route[]} */
     #routes = []
-
     /** @type {Route[]} */
     #plugins = []
+    /** @type {any} */
+    #locals = {}
 
     /**
      * create a **Tofu** web server
      */
     constructor() {
         this.#server = http.createServer(Context.build(this.#plugins, this.#routes))
+    }
+
+    /** @type {any} */
+    get locals() {
+        return this.#locals
     }
 
     /**
@@ -44,130 +54,130 @@ export default class Tofu {
         if (value !== true) {
             return
         }
-        this.plugin = secure()
+        this.plugin(secure())
     }
 
     /**
      * adds plugin
-     * @param {(context: Context, next: () => void) => void} value 
+     * @param {Plugin} value 
      */
-    set plugin(value) {
+    plugin(value) {
         this.use("/*", value)
     }
 
     /**
      * adds plugins
-     * @param {(context: Context, next: () => void) => void[]} value 
+     * @param {Plugin[]} value 
      */
-    set plugins(value) {
+    plugins(value) {
         const plugins = value
         const length = plugins.length
         let i = 0
         for (i; i < length; i++) {
-            this.plugin = plugins[i]
+            this.plugin(plugins[i])
         }
     }
 
     /**
      * @param {string} route 
-     * @param {(context: Context, next: () => void) => void} handler 
+     * @param {Plugin} handler 
      */
     use(route, handler) {
-        this.#plugins.push(new Route("ALL", route, handler))
+        this.#plugins.push(new Route("ANY", route, handler))
         return this
     }
 
     /**
      * @param {string} route 
-     * @param {(context: Context) => void} handler 
+     * @param {Handler} handler 
      */
     all(route, handler) {
-        this.route = { method: "ALL", route, handler }
+        this.route({ method: "ANY", route, handler })
         return this
     }
 
     /**
      * @param {string} route 
-     * @param {(context: Context) => void} handler 
+     * @param {Handler} handler 
      */
     get(route, handler) {
-        this.route = { method: "GET", route, handler }
+        this.route({ method: "GET", route, handler })
         return this
     }
 
     /**
      * @param {string} route 
-     * @param {(context: Context) => void} handler 
+     * @param {Handler} handler 
      */
     head(route, handler) {
-        this.route = { method: "HEAD", route, handler }
+        this.route({ method: "HEAD", route, handler })
         return this
     }
 
     /**
      * @param {string} route 
-     * @param {(context: Context) => void} handler 
+     * @param {Handler} handler 
      */
     post(route, handler) {
-        this.route = { method: "POST", route, handler }
+        this.route({ method: "POST", route, handler })
         return this
     }
 
     /**
      * @param {string} route 
-     * @param {(context: Context) => void} handler 
+     * @param {Handler} handler 
      */
     put(route, handler) {
-        this.route = { method: "PUT", route, handler }
+        this.route({ method: "PUT", route, handler })
         return this
     }
 
     /**
      * @param {string} route 
-     * @param {(context: Context) => void} handler 
+     * @param {Handler} handler 
      */
     delete(route, handler) {
-        this.route = { method: "DELETE", route, handler }
+        this.route({ method: "DELETE", route, handler })
         return this
     }
 
     /**
      * @param {string} route 
-     * @param {(context: Context) => void} handler 
+     * @param {Handler} handler 
      */
     patch(route, handler) {
-        this.route = { method: "PATCH", route, handler }
+        this.route({ method: "PATCH", route, handler })
         return this
     }
 
     /**
      * @param {string} route 
-     * @param {(context: Context) => void} handler 
+     * @param {Handler} handler 
      */
     options(route, handler) {
-        this.route = { method: "OPTIONS", route, handler }
+        this.route({ method: "OPTIONS", route, handler })
         return this
     }
 
     /**
      * adds route to app
-     * @param {{method: string, route: string, handler: (ctx: Context) => void}} value
+     * @param {{method: string, route: string, handler: Handler}} value
      */
-    set route(value) {
+    route(value) {
         let { method, route, handler } = value
         this.#routes.push(new Route(method, route, handler))
     }
 
     /**
      * adds route to app
-     * @param {{method: string, route: string, handler: (ctx: Context) => void}[]} value
+     * @param {{method: string, route: string, handler: Handler}[]} value
      */
-    set routes(value) {
+    routes(value) {
         const routes = value
         const length = routes.length
         let i = 0
         for (i; i < length; i++) {
-            this.route = routes[i]
+            this.route(routes[i])
         }
     }
 
