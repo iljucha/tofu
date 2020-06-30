@@ -62,7 +62,7 @@ app.routes([
   {
     method: "GET,
     route: "/user/:alias",
-    handler: ctx => ctx.json = ctx.locals
+    handler: ctx => ctx.json = ctx.locals.params
   }
 ])
 
