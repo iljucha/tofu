@@ -1,6 +1,6 @@
 export default function secure() {
     return (ctx, next) => {
-        ctx.header = {
+        ctx.headers = {
             "X-XSS-Protection": "1; mode=block",
             "X-Content-Type-Options": "nosniff",
             "X-Frame-Options": "DENY",

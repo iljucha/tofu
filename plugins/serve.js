@@ -36,7 +36,7 @@ export default function serve(path, ctx, next) {
                 ctx.status = 200
                 ctx.length = stat.size
                 ctx.cache = "public"
-                ctx.header = { "Last-Modified": mtime }
+                ctx.headers = { "Last-Modified": mtime }
                 ctx.type = output + (charset ? "; charset=" + charset : "")
                 ctx.charset = charset
                 ctx.body = data
