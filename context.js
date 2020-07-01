@@ -84,7 +84,9 @@ export default class Context {
      * ctx.end = true
      */
     set end(value) {
-        this.body = ""
+        if (value === true) {
+            this.body = ""
+        }
     }
 
     /**
