@@ -4,6 +4,7 @@ import url from "url"
 import { Readable } from "stream"
 import Route from "./route.js"
 import Render from "@iljucha/render"
+import { file } from "@iljucha/tofu/plugins/serve.js"
 
 export default class Context {
     /** @type {http.IncomingMessage} */
@@ -169,6 +170,15 @@ export default class Context {
                 }
             }
         })
+    }
+
+    /**
+     * @param {string} value
+     * @example
+     * ctx.file = "./views/index.html"
+     */
+    set file(value) {
+        file(value, this, ctx => { ctx.status = 404 })
     }
 
     /**
@@ -364,7 +374,7 @@ export default class Context {
     }
 
     static get hasBody() {
-        return /(.(body|json|text|html|redirect|render|end|throw) ?= ?)|.(output|assert)/
+        return /(.(body|json|text|html|redirect|render|end|throw|file) ?= ?)|.(output|assert)/
     }
 
     /**
