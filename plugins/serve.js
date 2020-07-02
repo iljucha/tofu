@@ -11,10 +11,19 @@ const isText = /^text\/|^application\/(javascript|json|html|plain|css)/
  */
 export default function serve(path, ctx, next) {
     const filename = path + ctx.cleanUrl
+    file(filename, ctx, next)
+}
+
+/**
+ * @param {string} path
+ * @param {Context} ctx 
+ * @param {() => void} errorCallback 
+ */
+export function file(filename, ctx, errorCallback) {
     let mtime, output, charset
     fs.stat(filename, (err, stat) => {
         if (!stat || !stat.isFile() || err) {
-            return next()
+            return errorCallback()
         }
         mtime = new Date(stat.mtimeMs).toUTCString()
         if (ctx.headers["if-modified-since"] === mtime) {
@@ -24,14 +33,14 @@ export default function serve(path, ctx, next) {
         }
         child.exec(`xdg-mime query filetype '${filename}'`, (err, stdout, stderr) => {
             if ((err || stderr) || !stdout) {
-                return next()
+                return errorCallback()
             }
             output = stdout.replace(/\n/gm, "")
             charset = isText.test(output) ? "utf-8" : false
             // @ts-ignore
             fs.readFile(filename, { encoding: charset }, (err, data) => {
                 if (err) {
-                    return next()
+                    return errorCallback()
                 }
                 ctx.status = 200
                 ctx.length = stat.size
