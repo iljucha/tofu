@@ -36,7 +36,7 @@ I also worked alot more with JSDoc and types in general to prevent stupid errors
 * set **html** {string} - *sends response body (with html presets)*
 * set **render** {{string, object}} - *sends rendered string*
 * set **text** {string} - *sends response body*
-
+* set **file** {string} - *sends file to user*
 
 # Usage 
 ```javascript
